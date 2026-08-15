@@ -96,11 +96,12 @@
 
   const H = 3490;
   const MARGIN = 46, GAP = 22;
-  const AXIS_LEFT_W = 74, AXIS_RIGHT_W = 74;
-  const COL_W = 116, CENTER_W = 90;
+  const AXIS_LEFT_W = 64, AXIS_RIGHT_W = 64;
+  const COL_W = 116, CENTER_W = 110;
   const plotTop = 106, plotBottom = 3426;
 
-  const TIME_COLORS = ['#94a3b8','#60a5fa','#34d399','#fbbf24','#f472b6','#a78bfa','#22d3ee','#fb7185'];
+  const TIME_COLORS = ['#94a3b8','#60a5fa','#34d399','#fbbf24','#f472b6','#a78bfa','#22d3ee','#fb7185']; // 模型圆点季度色（保持饱和）
+  const TIME_BLOCK_COLORS = ['#a9b4c2','#9fbfe2','#9fcdb6','#d3c18b','#cba6bc','#b3a6d8','#97c2cf','#cba4ae']; // 时间柱色块：同色系低饱和低亮度（浅灰调）
 
   const C = {
     bg: '#ffffff',
@@ -326,7 +327,7 @@
     const axisLeft = slots[0];
     const center = slots[6];
     const axisRight = slots[12];
-    const tlLeft = axisLeft.x + 14, tlRight = axisLeft.x + axisLeft.w - 14, tlW = tlRight - tlLeft;
+    const tlLeft = axisLeft.x + 10, tlRight = axisLeft.x + axisLeft.w - 10, tlW = tlRight - tlLeft;
     const colSlot = {};
     for (const s of slots) if (s.type === 'col') colSlot[s.company] = s;
     const plotX0 = colSlot[COLUMNS[0]].x;                 // 188
@@ -364,6 +365,7 @@
       startMonth: q,
       label: quarterLabelFromMonth(q),
       color: TIME_COLORS[idx % TIME_COLORS.length],
+      block: TIME_BLOCK_COLORS[idx % TIME_BLOCK_COLORS.length],
       median: median(qMap.get(q).map(m => m.score)),
       count: qMap.get(q).length
     }));
@@ -385,7 +387,7 @@
       } else {
         nextBoundaryScore = 0;
       }
-      segs.push({ label: q.label, color: q.color, topScore: prevBoundaryScore, bottomScore: nextBoundaryScore });
+      segs.push({ label: q.label, color: q.color, block: q.block, topScore: prevBoundaryScore, bottomScore: nextBoundaryScore });
       prevBoundaryScore = nextBoundaryScore;
     }
 
@@ -440,13 +442,13 @@
     for (const seg of segs) {
       const yTop = scoreToY(seg.topScore), yBot = scoreToY(seg.bottomScore);
       if (yBot - yTop < 4) continue;
-      parts.push(`<rect x="${tlLeft}" y="${yTop}" width="${tlW}" height="${yBot - yTop}" fill="${seg.color}" opacity="0.85"/>`);
+      parts.push(`<rect x="${tlLeft}" y="${yTop}" width="${tlW}" height="${yBot - yTop}" fill="${seg.block}"/>`);
       const cy = (yTop + yBot) / 2;
       if (yBot - yTop >= 20) {
-        parts.push(`<text x="${alx + alw/2}" y="${cy + 4}" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">${seg.label}</text>`);
+        parts.push(`<text x="${alx + alw/2}" y="${cy + 4}" font-size="12" font-weight="700" fill="#334155" text-anchor="middle">${seg.label}</text>`);
       }
       if (seg.bottomScore > 0) {
-        parts.push(`<line x1="${tlLeft}" y1="${yBot}" x2="${tlRight}" y2="${yBot}" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>`);
+        parts.push(`<line x1="${tlLeft}" y1="${yBot}" x2="${tlRight}" y2="${yBot}" stroke="rgba(51,65,85,0.30)" stroke-width="1"/>`);
       }
     }
     parts.push('</g>');
@@ -454,7 +456,7 @@
 
     // ---- 中央分数柱（文字均在条内）----
     const cx0 = center.x;
-    const barW = 54;
+    const barW = 74;
     const barLeft = cx0 + Math.round((CENTER_W - barW) / 2), barRight = barLeft + barW;
     const bcx = barLeft + barW / 2;
     const tickStyle = ' fill="#ffffff" stroke="rgba(15,23,42,0.55)" stroke-width="1.6" paint-order="stroke"';
