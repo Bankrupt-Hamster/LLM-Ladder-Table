@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>大模型智能天梯图</title>
+<style>
+  :root { --bg:#eef2f7; --card:#ffffff; --ink:#1f2937; --muted:#64748b; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; }
+  body {
+    background: var(--bg);
+    font-family: 'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif;
+    display:flex; flex-direction:column; color:var(--ink);
+  }
+  #toolbar {
+    flex:0 0 auto; display:flex; align-items:center; justify-content:flex-end;
+    padding:10px 18px; background:var(--card); border-bottom:1px solid #e5e9f0;
+    box-shadow:0 1px 3px rgba(15,23,42,.06); z-index:5;
+  }
+  #toolbar .hint { font-size:13px; color:var(--muted); }
+  #toolbar .hint b { color:var(--ink); }
+  .btns { display:flex; gap:8px; }
+  button {
+    font:inherit; font-size:13px; padding:7px 14px; border-radius:8px;
+    border:1px solid #d7dde7; background:#fff; color:var(--ink); cursor:pointer; transition:.15s;
+  }
+  button:hover { background:#f1f5f9; border-color:#c3cbd6; }
+  button.primary { background:#2563eb; border-color:#2563eb; color:#fff; }
+  button.primary:hover { background:#1d4ed8; }
+  #stage { flex:1 1 auto; min-height:0; padding:14px; display:flex; }
+  .card {
+    flex:1 1 auto; min-width:0; min-height:0; background:var(--card);
+    border-radius:14px; box-shadow:0 8px 30px rgba(15,23,42,.10);
+    border:1px solid #e6ebf2; overflow:auto; display:block; position:relative;
+  }
+  #chart { width:100%; height:auto; display:block; }
+  #emptyState { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); text-align:center; padding:24px; }
+  #emptyState b { color:var(--ink); font-size:18px; }
+  #emptyState p { line-height:1.7; margin:8px 0 0; }
+  #emptyState code { background:#eef2f7; padding:1px 6px; border-radius:4px; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(15,23,42,.35); display:flex; align-items:center; justify-content:center; z-index:50; }
+  .modal { background:#fff; border-radius:12px; box-shadow:0 20px 60px rgba(15,23,42,.25); width:min(480px,90vw); max-height:72vh; display:flex; flex-direction:column; overflow:hidden; }
+  .modal-head { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid #e5e9f0; font-weight:700; color:var(--ink); }
+  .modal-close { border:none; background:none; font-size:20px; line-height:1; cursor:pointer; color:var(--muted); }
+  .modal-list { overflow:auto; padding:8px; }
+  .modal-list button { display:block; width:100%; text-align:left; padding:8px 10px; border:1px solid transparent; border-radius:8px; background:none; font-size:13px; color:var(--ink); cursor:pointer; }
+  .modal-list button:hover { background:#f1f5f9; border-color:#e2e8f0; }
+  .modal-list button .s { color:#94a3b8; float:right; }
+</style>
+</head>
+<body>
+  <div id="toolbar">
+    <div class="btns">
+      <button id="importBtn">导入 CSV / MD</button>
+      <button id="saveBtn" class="primary">保存截图 PNG</button>
+    </div>
+    <input type="file" id="fileInput" accept=".csv,.md,.txt" style="display:none">
+  </div>
+
+  <div id="stage">
+    <div class="card">
+      <svg id="chart" xmlns="http://www.w3.org/2000/svg"
+           font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif"></svg>
+      <div id="emptyState" style="display:none">
+        <div>
+          <b>未加载到数据</b>
+          <p>未找到「数据源.js」或其中无数据。<br>请先运行 <code>python build_data.py</code> 生成它（读取同目录「数据源.csv」），<br>或点击右上角「导入 CSV / MD」手动选择文件。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="baseModal" class="modal-overlay" style="display:none">
+    <div class="modal">
+      <div class="modal-head"><span>选择倍率基准模型（1×）</span><button id="baseModalClose" class="modal-close">×</button></div>
+      <div class="modal-list" id="baseModalList"></div>
+    </div>
+  </div>
+
+<script src="数据源.js" charset="utf-8"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* 数据由 build_data.py 生成的「数据源.js」注入 window.__DATA_CSV（见 <script src>） */
+
+  /* =========================================================
+   * 2. 布局与配色常量
+   * ========================================================= */
+  // 左侧（中国）与右侧（美国/其他）公司栏；Misc=其他，未来可继续加数据。
+  const LEFT_COMPANIES  = ['Minimax', 'Qwen', 'GLM', 'Kimi', 'DeepSeek'];
+  const RIGHT_COMPANIES = ['OpenAI', 'Anthropic', 'xAI', 'Google', 'Misc'];
+  const COLUMNS = LEFT_COMPANIES.concat(RIGHT_COMPANIES); // 10 栏，左右各 5，对称
+
+  const H = 3490;
+  const MARGIN = 46, GAP = 22;
+  const AXIS_LEFT_W = 74, AXIS_RIGHT_W = 74;
+  const COL_W = 116, CENTER_W = 90;
+  const plotTop = 106, plotBottom = 3426;
+
+  const TIME_COLORS = ['#94a3b8','#60a5fa','#34d399','#fbbf24','#f472b6','#a78bfa','#22d3ee','#fb7185'];
+
+  const C = {
+    bg: '#ffffff',
+    bandLow: '#f8fafc', bandMid: '#fffbeb', bandHigh: '#f0fdf4',
+    grid: '#eef2f7', boundary: '#d8dee9',
+    text: '#1f2937', sub: '#64748b', faint: '#9ca3af',
+    tick: '#475569',
+    zoneLow: '#9ca3af', zoneMid: '#d97706', zoneHigh: '#16a34a',
+    pillFill: '#ffffff', pillStroke: '#dbe2ea', fillMark: '#94a3b8',
+    axisBg: '#f4f6fa', axisStroke: '#e2e8f0'
+  };
+
+  /* =========================================================
+   * 3. 别名表（过长的模型名简化；系列名可缩写）
+   * ========================================================= */
+  const MODEL_ALIAS = {
+    'Claude Opus 5':'Opus 5','Claude Fable 5':'Fable 5','Claude Opus 4.8':'Opus 4.8','Claude Opus 4.7':'Opus 4.7',
+    'Claude Sonnet 5':'Sonnet 5','Claude Opus 4.6':'Opus 4.6','Claude Sonnet 4.6':'Sonnet 4.6','Claude Opus 4.5':'Opus 4.5',
+    'Claude Sonnet 4.5':'Sonnet 4.5','Claude Haiku 4.5':'Haiku 4.5',
+    'GPT5.6 Sol':'GPT5.6 Sol','GPT-5.5':'GPT-5.5','GPT5.6 Terra':'GPT5.6 Terra','GPT-5.4 Pro':'GPT-5.4 Pro','GPT5.6 Luna':'GPT5.6 Luna',
+    'GPT-5.5 Pro':'GPT-5.5 Pro','GPT-5.4':'GPT-5.4','GPT-5.2':'GPT-5.2','GPT-5-Pro':'GPT-5-Pro','GPT-5.4 mini':'GPT-5.4 mini',
+    'GPT-5.2 Pro':'GPT-5.2 Pro','GPT-5.1':'GPT-5.1','GPT-5':'GPT-5','GPT-5.4 nano':'GPT-5.4 nano','GPT-5-mini':'GPT-5-mini',
+    'Grok 4.6':'Grok 4.6','Grok 4.5':'Grok 4.5','Grok 4':'Grok 4','Grok 4.2':'Grok 4.2','Grok 4.3':'Grok 4.3','Grok 4.1 fast':'Grok 4.1 fast',
+    'Gemini 3.7 Flash':'Gemini 3.7 Flash','Gemini 3 Deep Think - 2620':'Gemini 3 DeepThink','Gemini 3.5 Flash':'Gemini 3.5 Flash',
+    'Gemini 3.0 Pro':'Gemini 3.0 Pro','Gemini 3.1 Pro Preview':'Gemini 3.1 Pro','Gemini 3.0 Flash':'Gemini 3.0 Flash',
+    'Gemini 2.5 Deep Think':'Gemini 2.5 DeepThink','Gemma 4 31B':'Gemma 4 31B',
+    'Kimi K3':'Kimi K3','Kimi K2.6':'Kimi K2.6','Kimi K2.5':'Kimi K2.5','Kimi K2 Thinking':'Kimi K2 Thinking','Kimi K2':'Kimi K2','Kimi K2 0905':'Kimi K2 0905',
+    'GLM 5.3':'GLM 5.3','GLM-5.2':'GLM-5.2','GLM 5.1':'GLM 5.1','GLM 4.7':'GLM 4.7','GLM-5':'GLM-5','GLM 4.6':'GLM 4.6','GLM 4.7 Flash':'GLM 4.7 Flash','GLM 4.5':'GLM 4.5','GLM 4.5 Air':'GLM 4.5 Air',
+    'Minimax M3':'M3','Minimax M2.5':'M2.5','Minimax M2.7':'M2.7','Minimax M2.1':'M2.1','Minimax M2':'M2',
+    'DeepSeek V4 Pro':'V4 Pro','DeepSeek V4 Flash':'V4 Flash','DeepSeek V4 Pro Preview':'V4 Pro Prev','DeepSeek V4 Flash Preview':'V4 Flash Prev',
+    'DeepSeek V3.2 Speciale':'V3.2 Speciale','DeepSeek V3.2':'V3.2','DeepSeek V3.2 Experiment':'V3.2 Exp','DeepSeek V3.1 Terminus':'V3.1 Terminus','DeepSeek V3.1':'V3.1',
+    'Qwen3.7-Max-Preview':'Qwen3.7-Max','Qwen3.6-Max-Preview':'Qwen3.6-Max','Qwen3-Max-Thinking':'Qwen3-Max','Qwen3.6 Plus':'Qwen3.6 Plus',
+    'Qwen3.5-397B-A17B':'Qwen3.5-397B','Qwen3.5-27B':'Qwen3.5-27B','Qwen3.6-27B':'Qwen3.6-27B','Qwen3.6-35B-A3B':'Qwen3.6-35B',
+    'Qwen3 Max (Preview)':'Qwen3-Max','Qwen3-30B-A3B-2507':'Qwen3-30B','Qwen3-235B-A22B-Thinking':'Qwen3-235B','Qwen3-235B-A22B-Thinking-2507':'Qwen3-235B'
+  };
+
+  function shortName(model, company) {
+    if (MODEL_ALIAS[model]) return MODEL_ALIAS[model];
+    let s = model;
+    if (company === 'Anthropic') s = s.replace(/^Claude\s+/, '');
+    else if (company === 'Minimax') s = s.replace(/^Minimax\s*/, '');
+    else if (company === 'DeepSeek') s = s.replace(/^DeepSeek\s*/, '');
+    return s.replace(/\s*-\s*(2507|2620|preview)$/i, '').trim() || model;
+  }
+
+  /* =========================================================
+   * 4. CSV / Markdown 表格解析
+   * ========================================================= */
+  function parseCSVLine(line) {
+    const out = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (inQ) {
+        if (c === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else inQ = false; }
+        else cur += c;
+      } else {
+        if (c === '"') inQ = true;
+        else if (c === ',') { out.push(cur); cur = ''; }
+        else cur += c;
+      }
+    }
+    out.push(cur);
+    return out;
+  }
+
+  function parseCSV(text) {
+    text = String(text).replace(/^\uFEFF/, '');
+    const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+    if (!lines.length) return [];
+    const header = parseCSVLine(lines[0]).map(h => h.trim());
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cells = parseCSVLine(lines[i]);
+      if (!cells.length || cells.every(c => c.trim() === '')) continue;
+      const obj = { _cells: cells };
+      header.forEach((h, idx) => { obj[h] = cells[idx] !== undefined ? cells[idx].trim() : ''; });
+      rows.push(obj);
+    }
+    return rows;
+  }
+
+  function parseMarkdownTable(text) {
+    text = String(text).replace(/^\uFEFF/, '');
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.startsWith('|') && l.endsWith('|'));
+    if (lines.length < 2) return [];
+    const header = lines[0].split('|').slice(1, -1).map(s => s.trim());
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cells = lines[i].split('|').slice(1, -1).map(s => s.trim());
+      if (cells.length === 0) continue;
+      const isSep = cells.every(c => /^:?-{2,}:?$/.test(c) || c === '');
+      if (isSep) continue;
+      const obj = { _cells: cells };
+      header.forEach((h, idx) => { obj[h] = cells[idx] !== undefined ? cells[idx] : ''; });
+      rows.push(obj);
+    }
+    return rows;
+  }
+
+  function parseText(text) {
+    const s = String(text);
+    if (/^\s*\|/.test(s) || /\|\s*[\-:]+\s*\|/.test(s)) {
+      const md = parseMarkdownTable(s);
+      if (md.length) return md;
+    }
+    return parseCSV(s);
+  }
+
+  /* =========================================================
+   * 5. 字段规整、公司归一、模型处理
+   * ========================================================= */
+  function getField(obj, ...names) {
+    for (const n of names) { if (obj[n] !== undefined && obj[n] !== '') return obj[n]; }
+    return '';
+  }
+  function num(v) {
+    if (v === null || v === undefined) return null;
+    const s = String(v).replace(/\*/g, '').trim();
+    if (s === '') return null;
+    const n = parseFloat(s);
+    return isNaN(n) ? null : n;
+  }
+
+  function canonicalCompany(name) {
+    const n = String(name).trim();
+    const lower = n.toLowerCase();
+    if (['misc', '其他', 'other', 'others', '其它'].includes(lower)) return 'Misc';
+    for (const k of COLUMNS) if (lower === k.toLowerCase()) return k;
+    if (lower.includes('minimax') || lower.includes('mini')) return 'Minimax';
+    if (lower.includes('qwen') || lower.includes('通义')) return 'Qwen';
+    if (lower.includes('glm') || lower.includes('智谱')) return 'GLM';
+    if (lower.includes('kimi') || lower.includes('月之暗面')) return 'Kimi';
+    if (lower.includes('deepseek') || lower.includes('深度求索')) return 'DeepSeek';
+    if (lower.includes('openai')) return 'OpenAI';
+    if (lower.includes('anthropic') || lower.includes('claude')) return 'Anthropic';
+    if (lower.includes('xai') || lower.includes('grok')) return 'xAI';
+    if (lower.includes('google') || lower.includes('gemini') || lower.includes('gemma')) return 'Google';
+    return 'Misc';
+  }
+
+  function buildModels(rows) {
+    const models = [];
+    for (const row of rows) {
+      const model = String(getField(row, '模型', 'model')).trim();
+      if (!model) continue;
+      const company = canonicalCompany(getField(row, '公司', 'company'));
+
+      const dateStr = String(getField(row, '发布日期', 'date')).replace(/\D/g, '');
+      let dateNum = 0;
+      if (dateStr.length >= 8) dateNum = parseInt(dateStr.slice(0, 8), 10);
+      else if (dateStr.length === 6) dateNum = parseInt('20' + dateStr, 10);
+
+      const hleS = getField(row, 'HLE', 'hle'), aaS = getField(row, 'AA', 'aa'),
+            dsS = getField(row, 'DeepSWE', 'deepswe'), zzS = getField(row, '致知');
+      const hle = num(hleS), aa = num(aaS), ds = num(dsS), zz = num(zzS);
+      const weighted = num(getField(row, '加权和', 'weighted'));
+      const personal = num(getField(row, '个人评分', 'personal')) || 0;
+
+      let score = num(getField(row, '最终分数', 'score', 'final'));
+      if (score === null && weighted !== null) score = 60 * (weighted / 46.10) + personal;
+      if (score === null || isNaN(score)) continue;
+
+      const hasFill =
+        String(getField(row, 'HLE补全') || '').trim() === '1' ||
+        String(getField(row, 'AA补全') || '').trim() === '1' ||
+        String(getField(row, 'DeepSWE补全') || '').trim() === '1' ||
+        String(getField(row, '致知补全') || '').trim() === '1' ||
+        /[*]/.test(hleS + aaS + dsS + zzS);
+
+      models.push({ company, model, alias: shortName(model, company), dateNum, dateStr,
+                    hle, aa, ds, zz, weighted, personal, score, hasFill });
+    }
+    return models;
+  }
+
+  /* =========================================================
+   * 6. 时间轴分块（3 个月一块）
+   * ========================================================= */
+  function quarterStart(d) {
+    const y = Math.floor(d / 10000), m = Math.floor((d % 10000) / 100);
+    return y * 10000 + (Math.floor((m - 1) / 3) * 3 + 1) * 100 + 1;
+  }
+  function addMonths(d, n) {
+    let y = Math.floor(d / 10000), m = Math.floor((d % 10000) / 100);
+    m += n;
+    while (m > 12) { m -= 12; y++; }
+    while (m < 1) { m += 12; y--; }
+    return y * 10000 + m * 100 + 1;
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function fmtDate(d) { const s = String(d); return s.length === 8 ? s.slice(0,4) + '-' + s.slice(4,6) + '-' + s.slice(6,8) : s; }
+  function fmtYM(d) { return Math.floor(d/10000) + '-' + pad2(Math.floor((d%10000)/100)); }
+
+  /* =========================================================
+   * 7. 渲染
+   * ========================================================= */
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  const FONT = "'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif";
+  const measureCtx = (typeof document !== 'undefined') ? document.createElement('canvas').getContext('2d') : null;
+  function textWidth(t, px) {
+    if (!measureCtx) return String(t).length * px * 0.6;
+    measureCtx.font = px + 'px ' + FONT;
+    return measureCtx.measureText(t).width;
+  }
+
+  let currentModels = [];
+  let baselineName = null;
+
+  function render(models) {
+    // ---- 槽位布局（从左到右）----
+    const slots = [{ type: 'axisLeft', w: AXIS_LEFT_W }];
+    for (let i = 0; i < 5; i++) slots.push({ type: 'col', w: COL_W, company: COLUMNS[i], side: 'left', idx: i });
+    slots.push({ type: 'center', w: CENTER_W });
+    for (let i = 5; i < 10; i++) slots.push({ type: 'col', w: COL_W, company: COLUMNS[i], side: 'right', idx: i - 5 });
+    slots.push({ type: 'axisRight', w: AXIS_RIGHT_W });
+    let x = MARGIN;
+    for (const s of slots) { s.x = x; x += s.w + GAP; }
+    const W = x - GAP + MARGIN;
+
+    const axisLeft = slots[0];
+    const center = slots[6];
+    const axisRight = slots[12];
+    const tlLeft = axisLeft.x + 14, tlRight = axisLeft.x + axisLeft.w - 14, tlW = tlRight - tlLeft;
+    const colSlot = {};
+    for (const s of slots) if (s.type === 'col') colSlot[s.company] = s;
+    const plotX0 = colSlot[COLUMNS[0]].x;                 // 188
+    const plotX1 = colSlot[COLUMNS[9]].x + COL_W;          // 1778
+
+    function scoreToY(s) {
+      const ss = Math.max(0, Math.min(100, s));
+      return plotBottom - (ss / 100) * (plotBottom - plotTop);
+    }
+
+    // ---- 时间分块：按季度分桶，用「中位分」界定各季度在分数轴上的垂直区间 ----
+    const dates = models.map(m => m.dateNum).filter(d => d > 0);
+    const minD = dates.length ? Math.min.apply(null, dates) : 20250701;
+    const maxD = dates.length ? Math.max.apply(null, dates) : 20260901;
+    const monthOf = d => Math.floor(d / 10000) * 12 + (Math.floor((d % 10000) / 100) - 1);
+    const quarterOf = d => Math.floor(monthOf(d) / 3) * 3;
+    const quarterLabelFromMonth = mm => {
+      const y = Math.floor(mm / 12), mo = (mm % 12) + 1;
+      return String(y).slice(-2) + 'Q' + (Math.floor((mo - 1) / 3) + 1);
+    };
+    const median = arr => {
+      const a = arr.slice().sort((x, y) => x - y), n = a.length;
+      return n ? (n % 2 ? a[(n - 1) / 2] : (a[n / 2 - 1] + a[n / 2]) / 2) : 0;
+    };
+
+    const MIN_QUARTER = 2025 * 12 + 6;                               // 25Q3 = 2025-07；更早的老模型归入 25Q3
+    const qMap = new Map();
+    for (const m of models) if (m.dateNum) {
+      const q = Math.max(quarterOf(m.dateNum), MIN_QUARTER);
+      if (!qMap.has(q)) qMap.set(q, []);
+      qMap.get(q).push(m);
+    }
+    const quarterStarts = [...qMap.keys()].sort((a, b) => a - b);   // 时间升序（旧→新）
+    const quarters = quarterStarts.map((q, idx) => ({
+      startMonth: q,
+      label: quarterLabelFromMonth(q),
+      color: TIME_COLORS[idx % TIME_COLORS.length],
+      median: median(qMap.get(q).map(m => m.score)),
+      count: qMap.get(q).length
+    }));
+    for (const q of quarters) for (const m of qMap.get(q.startMonth)) m.qColor = q.color;
+    // 中位数=锚点(中心位置)，模型数量=空间权重：分界 = λ·计数比例位置 + (1-λ)·中位数中点（上下顶满）
+    const LAMBDA = 0.8;
+    const ordered = quarters.slice().sort((a, b) => b.median - a.median);
+    const totalCount = ordered.reduce((s, q) => s + q.count, 0);
+    const segs = [];
+    let cumCount = 0, prevBoundaryScore = 100;
+    for (let i = 0; i < ordered.length; i++) {
+      const q = ordered[i];
+      let nextBoundaryScore;
+      if (i < ordered.length - 1) {
+        cumCount += q.count;
+        const bCount = 100 * (1 - cumCount / totalCount);
+        const bMedian = (q.median + ordered[i + 1].median) / 2;
+        nextBoundaryScore = LAMBDA * bCount + (1 - LAMBDA) * bMedian;
+      } else {
+        nextBoundaryScore = 0;
+      }
+      segs.push({ label: q.label, color: q.color, topScore: prevBoundaryScore, bottomScore: nextBoundaryScore });
+      prevBoundaryScore = nextBoundaryScore;
+    }
+
+    const minScore = Math.min.apply(null, models.map(m => m.score));
+    const worst = models.reduce((a, b) => (b.score < a.score ? b : a), models[0]);
+    const base = models.find(m => m.model === baselineName) || worst;
+
+    const parts = [];
+
+    // ---- defs：渐变分数柱 ----
+    parts.push('<defs>');
+    parts.push('<linearGradient id="scoreGrad" x1="0" y1="1" x2="0" y2="0">');
+    parts.push('<stop offset="0" stop-color="#3b82f6"/>');
+    parts.push('<stop offset="0.5" stop-color="#ef4444"/>');
+    parts.push('<stop offset="1" stop-color="#fde68a"/>');
+    parts.push('</linearGradient>');
+    parts.push(`<clipPath id="tlClip"><rect x="${tlLeft}" y="${plotTop}" width="${tlW}" height="${plotBottom - plotTop}" rx="6"/></clipPath>`);
+    parts.push('</defs>');
+
+    // ---- 背景 ----
+    parts.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="${C.bg}"/>`);
+
+    // ---- 标题 ----
+    parts.push(`<text x="${W/2}" y="34" font-size="30" font-weight="700" fill="${C.text}" text-anchor="middle">大模型智能天梯图</text>`);
+    parts.push(`<text x="${W/2}" y="60" font-size="13" fill="${C.sub}" text-anchor="middle">更新日期 20260816    作者 Panda</text>`);
+
+    // ---- 分带底色 ----
+    function band(lo, hi, color) {
+      const y = scoreToY(hi), h = scoreToY(lo) - y;
+      parts.push(`<rect x="${plotX0}" y="${y}" width="${plotX1 - plotX0}" height="${h}" fill="${color}"/>`);
+    }
+    band(0, 60, C.bandLow);
+    band(60, 80, C.bandMid);
+    band(80, 100, C.bandHigh);
+
+    // ---- 横向网格线（虚线，透明度低于列分隔线）----
+    [20, 40, 60, 80, 100].forEach(s => {
+      parts.push(`<line x1="${plotX0}" y1="${scoreToY(s)}" x2="${plotX1}" y2="${scoreToY(s)}" stroke="rgba(148,163,184,0.5)" stroke-width="1" stroke-dasharray="4 4"/>`);
+    });
+    // ---- 各公司栏之间的分隔细线（高透明）----
+    for (const s of slots) {
+      if (s.type !== 'col') continue;
+      const gx = s.x - GAP / 2;
+      parts.push(`<line x1="${gx}" y1="${plotTop}" x2="${gx}" y2="${plotBottom}" stroke="rgba(148,163,184,0.22)" stroke-width="1"/>`);
+    }
+
+    // ---- 左侧时间轴（连续时间柱：季度色段按中位分界定区间 + 分隔线）----
+    const alx = axisLeft.x, alw = axisLeft.w;
+    parts.push(`<text x="${alx + alw/2}" y="82" font-size="14" font-weight="700" fill="${C.text}" text-anchor="middle">发布时间</text>`);
+    parts.push('<g clip-path="url(#tlClip)">');
+    parts.push(`<rect x="${tlLeft}" y="${plotTop}" width="${tlW}" height="${plotBottom - plotTop}" fill="${C.axisBg}"/>`);
+    for (const seg of segs) {
+      const yTop = scoreToY(seg.topScore), yBot = scoreToY(seg.bottomScore);
+      if (yBot - yTop < 4) continue;
+      parts.push(`<rect x="${tlLeft}" y="${yTop}" width="${tlW}" height="${yBot - yTop}" fill="${seg.color}" opacity="0.85"/>`);
+      const cy = (yTop + yBot) / 2;
+      if (yBot - yTop >= 20) {
+        parts.push(`<text x="${alx + alw/2}" y="${cy + 4}" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle">${seg.label}</text>`);
+      }
+      if (seg.bottomScore > 0) {
+        parts.push(`<line x1="${tlLeft}" y1="${yBot}" x2="${tlRight}" y2="${yBot}" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>`);
+      }
+    }
+    parts.push('</g>');
+    parts.push(`<rect x="${tlLeft}" y="${plotTop}" width="${tlW}" height="${plotBottom - plotTop}" rx="6" fill="none" stroke="${C.axisStroke}"/>`);
+
+    // ---- 中央分数柱（文字均在条内）----
+    const cx0 = center.x;
+    const barW = 54;
+    const barLeft = cx0 + Math.round((CENTER_W - barW) / 2), barRight = barLeft + barW;
+    const bcx = barLeft + barW / 2;
+    const tickStyle = ' fill="#ffffff" stroke="rgba(15,23,42,0.55)" stroke-width="1.6" paint-order="stroke"';
+    parts.push(`<rect x="${barLeft}" y="${scoreToY(100)}" width="${barW}" height="${scoreToY(0)-scoreToY(100)}" rx="8" fill="url(#scoreGrad)" stroke="${C.boundary}"/>`);
+    parts.push(`<text x="${bcx}" y="82" font-size="14" font-weight="700" fill="${C.text}" text-anchor="middle">分数</text>`);
+    [20, 40, 60, 80].forEach(s => {
+      const y = scoreToY(s);
+      const gapHalf = 11;
+      parts.push(`<line x1="${barLeft}" y1="${y}" x2="${bcx - gapHalf}" y2="${y}" stroke="rgba(15,23,42,0.45)" stroke-width="1.5"/>`);
+      parts.push(`<line x1="${bcx + gapHalf}" y1="${y}" x2="${barRight}" y2="${y}" stroke="rgba(15,23,42,0.45)" stroke-width="1.5"/>`);
+      parts.push(`<text x="${bcx}" y="${y + 4}" font-size="11" font-weight="700"${tickStyle} text-anchor="middle">${s}</text>`);
+    });
+    parts.push(`<text x="${bcx}" y="${plotTop + 16}" font-size="11" font-weight="700"${tickStyle} text-anchor="middle">100</text>`);
+    parts.push(`<text x="${bcx}" y="${plotBottom - 6}" font-size="11" font-weight="700"${tickStyle} text-anchor="middle">0</text>`);
+    // 分区说明（条内）
+    function zone(y, name, range) {
+      parts.push(`<text x="${bcx}" y="${y - 5}" font-size="12" font-weight="700"${tickStyle} text-anchor="middle">${name}</text>`);
+      parts.push(`<text x="${bcx}" y="${y + 9}" font-size="10"${tickStyle} text-anchor="middle">${range}</text>`);
+    }
+    zone(scoreToY(90), '高智能', '80–100');
+    zone(scoreToY(70), '可用', '60–80');
+    zone(scoreToY(30), '不可用', '0–60');
+
+    // ---- 右侧倍率轴 ----
+    const arx = axisRight.x, arw = axisRight.w;
+    parts.push(`<rect x="${arx}" y="${plotTop}" width="${arw - 8}" height="${plotBottom - plotTop}" rx="8" fill="${C.axisBg}" stroke="${C.axisStroke}"/>`);
+    parts.push(`<text x="${arx + (arw-8)/2}" y="82" font-size="14" font-weight="700" fill="${C.text}" text-anchor="middle">理论性能倍率</text>`);
+    const maxMult = Math.max(1, Math.floor(98 / base.score));
+    for (let m = 1; m <= maxMult; m++) {
+      const y = scoreToY(base.score * m);
+      parts.push(`<line x1="${arx}" y1="${y}" x2="${arx + 6}" y2="${y}" stroke="${C.faint}" stroke-width="1"/>`);
+      parts.push(`<text x="${arx + 9}" y="${y + 4}" font-size="11" fill="${C.sub}">${m}×</text>`);
+    }
+
+    // ---- 公司标题 ----
+    for (const s of slots) {
+      if (s.type !== 'col') continue;
+      const name = s.company === 'Misc' ? 'Misc' : s.company;
+      parts.push(`<text x="${s.x + COL_W/2}" y="82" font-size="16" font-weight="700" fill="${C.text}" text-anchor="middle">${esc(name)}</text>`);
+    }
+
+    // ---- 模型标签 ----
+    const fontSize = 14, lineH = 16, padY = 4, padX = 8, dotR = 3.5, dotGap = 5, gap = 4;
+    const textInset = padX + dotR * 2 + dotGap;
+
+    function wrap(text, mark, maxW) {
+      const full = mark ? text + ' ' + mark : text;
+      if (textWidth(full, fontSize) <= maxW) return [full];
+      const words = text.split(/\s+/).filter(Boolean);
+      let lines = [];
+      if (words.length >= 2) {
+        for (let k = 1; k < words.length; k++) {
+          const l1 = words.slice(0, k).join(' ');
+          const l2 = words.slice(k).join(' ') + (mark ? ' ' + mark : '');
+          if (textWidth(l1, fontSize) <= maxW && textWidth(l2, fontSize) <= maxW) { lines = [l1, l2]; break; }
+        }
+      }
+      if (!lines.length) {
+        const mid = Math.floor(full.length / 2);
+        lines = [full.slice(0, mid), full.slice(mid)];
+      }
+      return lines.map(ln => {
+        if (textWidth(ln, fontSize) <= maxW) return ln;
+        let t = ln;
+        while (t.length > 1 && textWidth(t + '…', fontSize) > maxW) t = t.slice(0, -1);
+        return t + '…';
+      });
+    }
+
+    for (const company of COLUMNS) {
+      const s = colSlot[company];
+      const list = models.filter(m => m.company === company)
+        .sort((a, b) => (b.score - a.score) || (b.dateNum - a.dateNum));
+      if (!list.length) continue;
+
+      const maxTextW = COL_W - textInset - padX;
+      const items = list.map(m => {
+        const lines = wrap(m.alias, '', maxTextW);
+        let maxW = 0; for (const ln of lines) maxW = Math.max(maxW, textWidth(ln, fontSize));
+        return { m, lines, h: lines.length * lineH + padY * 2, w: Math.min(COL_W, textInset + maxW + padX) };
+      });
+
+      // 自上而下排布，避免重叠（分数高者锚定，低者下推）
+      let prevBottom = -Infinity;
+      for (const it of items) {
+        let cy = scoreToY(it.m.score);
+        let top = cy - it.h / 2;
+        if (top < prevBottom + gap) { top = prevBottom + gap; cy = top + it.h / 2; }
+        const minTop = plotTop + 2, maxBot = plotBottom - 2;
+        top = Math.max(minTop, Math.min(top, maxBot - it.h));
+        cy = top + it.h / 2;
+        it.top = top; it.cy = cy;
+        prevBottom = top + it.h;
+      }
+
+      const cx = s.x + COL_W / 2;
+      for (const it of items) {
+        const px0 = cx - it.w / 2, py0 = it.top, h = it.h, r = Math.min(6, h / 2);
+        const m = it.m;
+        const tip = `${m.model}\n${m.company} · ${fmtDate(m.dateNum)}\n最终分数 ${m.score.toFixed(1)}` +
+          `\nHLE ${m.hle ?? '—'} · AA ${m.aa ?? '—'} · DeepSWE ${m.ds ?? '—'} · 致知 ${m.zz ?? '—'}` +
+          (m.hasFill ? '\n含 kNN 估算补全' : '');
+        const centered = it.lines.length > 1;
+        parts.push('<g>');
+        parts.push(`<title>${esc(tip)}</title>`);
+        parts.push(`<rect x="${px0}" y="${py0}" width="${it.w}" height="${h}" rx="${r}" fill="${C.pillFill}" stroke="${C.pillStroke}" stroke-width="1"/>`);
+        parts.push(`<circle cx="${px0 + padX + dotR}" cy="${py0 + h/2}" r="${dotR}" fill="${m.qColor}"/>`);
+        it.lines.forEach((ln, j) => {
+          const ly = py0 + padY + lineH * (j + 0.5);
+          const by = ly + fontSize * 0.34;
+          const x = centered ? (px0 + it.w / 2) : (px0 + textInset);
+          const anchor = centered ? ' text-anchor="middle"' : '';
+          parts.push(`<text x="${x}" y="${by}" font-size="${fontSize}" fill="${C.text}"${anchor}>${esc(ln)}</text>`);
+        });
+        parts.push('</g>');
+      }
+    }
+
+    // ---- 底部说明（单行，含可调倍率基准）----
+    const fy1 = 3460;
+    let fx = MARGIN;
+    const fseg = (t, color) => {
+      const w = textWidth(t, 12);
+      parts.push(`<text x="${fx}" y="${fy1}" font-size="12" fill="${color || C.sub}">${esc(t)}</text>`);
+      fx += w;
+    };
+    fseg(`数据来源：数据源.csv　·　共 ${models.length} 款模型　·　发布区间 ${fmtYM(minD)} ~ ${fmtYM(maxD)}　·　`);
+    fseg('倍率：以 ');
+    const baseText = `${base.alias}（${base.score.toFixed(1)} 分）`;
+    const boxW = textWidth(baseText, 12) + 22;
+    const boxX = fx, boxY = fy1 - 14;
+    parts.push('<g style="cursor:pointer" onclick="window.__selectBaseline()">');
+    parts.push(`<rect x="${boxX}" y="${boxY}" width="${boxW}" height="22" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>`);
+    parts.push(`<text x="${boxX + boxW/2}" y="${fy1}" font-size="12" font-weight="700" fill="#475569" text-anchor="middle">${esc(baseText)}</text>`);
+    parts.push('</g>');
+    fx += boxW;
+    fseg('　为 1×');
+
+    const svg = document.getElementById('chart');
+    svg.innerHTML = parts.join('\n');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', W);
+    svg.setAttribute('height', H);
+  }
+
+  /* =========================================================
+   * 8. 导出 PNG
+   * ========================================================= */
+  function exportPNG() {
+    const svg = document.getElementById('chart');
+    const vb = svg.viewBox.baseVal;
+    const scale = 2;
+    const w = Math.round(vb.width * scale), h = Math.round(vb.height * scale);
+    const clone = svg.cloneNode(true);
+    clone.setAttribute('width', w);
+    clone.setAttribute('height', h);
+    clone.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.width} ${vb.height}`);
+    const xml = new XMLSerializer().serializeToString(clone);
+    const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = function () {
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function (png) {
+        if (!png) { alert('PNG 生成失败，请换用 Chrome / Edge 重试。'); return; }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(png);
+        a.download = '大模型智能天梯图.png';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+      }, 'image/png');
+    };
+    img.onerror = function () { alert('截图导出失败（可能是浏览器限制）。请换用 Chrome / Edge。'); URL.revokeObjectURL(url); };
+    img.src = url;
+  }
+
+  /* =========================================================
+   * 9. 事件绑定
+   * ========================================================= */
+  const svg = document.getElementById('chart');
+  const fileInput = document.getElementById('fileInput');
+
+  function loadText(text, label) {
+    const rows = parseText(text);
+    if (!rows.length) { alert('未解析到任何数据。请确认文件为「天梯图数据源.csv / .md」格式。'); return; }
+    const models = buildModels(rows);
+    if (!models.length) { alert('数据为空或缺少「最终分数 / 加权和」字段。'); return; }
+    currentModels = models;
+    document.getElementById('emptyState').style.display = 'none';
+    render(models);
+  }
+
+  function openBaseline() {
+    const listEl = document.getElementById('baseModalList');
+    listEl.innerHTML = '';
+    const sorted = currentModels.slice().sort((a, b) => a.score - b.score);
+    for (const m of sorted) {
+      const b = document.createElement('button');
+      b.innerHTML = esc(m.alias) + '<span class="s">' + esc(m.company) + ' · ' + m.score.toFixed(1) + ' 分</span>';
+      b.onclick = function () {
+        baselineName = m.model;
+        document.getElementById('baseModal').style.display = 'none';
+        render(currentModels);
+      };
+      listEl.appendChild(b);
+    }
+    document.getElementById('baseModal').style.display = 'flex';
+  }
+  window.__selectBaseline = openBaseline;
+
+  document.getElementById('baseModalClose').addEventListener('click', function () {
+    document.getElementById('baseModal').style.display = 'none';
+  });
+  document.getElementById('baseModal').addEventListener('click', function (e) {
+    if (e.target === this) this.style.display = 'none';
+  });
+  document.getElementById('importBtn').addEventListener('click', function () { fileInput.click(); });
+  document.getElementById('saveBtn').addEventListener('click', exportPNG);
+  fileInput.addEventListener('change', function () {
+    const f = fileInput.files && fileInput.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = function () { loadText(reader.result, f.name); fileInput.value = ''; };
+    reader.onerror = function () { alert('读取文件失败。'); };
+    reader.readAsText(f, 'utf-8');
+  });
+
+  // 初始渲染：读取 build_data.py 生成的「数据源.js」（window.__DATA_CSV）
+  if (window.__DATA_CSV) {
+    loadText(window.__DATA_CSV, '数据源.csv');
+  } else {
+    document.getElementById('emptyState').style.display = 'flex';
+  }
+})();
+</script>
+</body>
+</html>

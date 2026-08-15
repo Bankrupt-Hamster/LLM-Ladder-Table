@@ -1,0 +1,173 @@
+﻿Company,Model,Mode,Score,Date
+DeepSeek-AI,DeepSeek-V4-Pro,思考水平·极高 工具,48.20,2026-08-13
+DeepSeek-AI,DeepSeek-V4-Pro,思考水平·高 工具,44.70,2026-08-13
+DeepSeek-AI,DeepSeek-V4-Pro,思考水平·Max,37.70,2026-08-13
+DeepSeek-AI,DeepSeek-V4-Pro,思考水平·高,34.50,2026-08-13
+DeepSeek-AI,DeepSeek-V4-Pro,常规模式,7.70,2026-08-13
+Facebook AI研究实验室,Muse Glimmer-30B,思考水平·高,22.00,2026-08-10
+Anthropic,Claude Opus 5,思考水平·Max 工具,64.70,2026-07-24
+Anthropic,Claude Opus 5,思考水平·Max,56.30,2026-07-24
+Moonshot AI,Kimi K3,思考水平·Max 工具,56.00,2026-07-16
+Moonshot AI,Kimi K3,思考水平·Max,43.50,2026-07-16
+TH,Inkling,开启思考 工具,46.00,2026-07-15
+TH,Inkling,开启思考,29.70,2026-07-15
+Facebook AI研究实验室,Muse Spark 1.1,开启思考 工具,62.10,2026-07-09
+腾讯AI实验室,Hy3,思考水平·高 工具,53.20,2026-07-06
+腾讯AI实验室,Hy3,思考水平·高,37.00,2026-07-06
+Anthropic,Claude Sonnet 5,思考水平·极高 工具,57.40,2026-06-30
+Anthropic,Claude Sonnet 5,思考水平·极高,43.20,2026-06-30
+Google Deep Mind,Gemini 3.5 Flash,思考水平·高 工具,40.20,2026-06-20
+智谱AI,GLM-5.2,开启思考 工具,54.70,2026-06-13
+智谱AI,GLM-5.2,开启思考,40.50,2026-06-13
+Anthropic,Claude Fable 5,深度思考模式,59.00,2026-06-09
+StepFunAI,Step 3.7 Flash,开启思考 工具,47.20,2026-05-29
+Anthropic,Claude Opus 4.8,扩展思考 工具,57.90,2026-05-28
+Anthropic,Claude Opus 4.8,扩展思考,49.80,2026-05-28
+阿里巴巴,Qwen3.7-Max-Preview,开启思考 工具,53.50,2026-05-20
+阿里巴巴,Qwen3.7-Max-Preview,思考水平·Max,41.40,2026-05-20
+DeepSeek-AI,DeepSeek-V4-Flash,思考水平·极高 工具,45.10,2026-04-24
+DeepSeek-AI,DeepSeek-V4-Flash,思考水平·高 工具,40.30,2026-04-24
+DeepSeek-AI,DeepSeek-V4-Flash,思考水平·Max,34.80,2026-04-24
+DeepSeek-AI,DeepSeek-V4-Flash,思考水平·高,29.40,2026-04-24
+DeepSeek-AI,DeepSeek-V4-Flash,常规模式,8.10,2026-04-24
+OpenAI,GPT-5.5 Pro,思考水平·极高 工具,57.20,2026-04-23
+OpenAI,GPT-5.5,思考水平·高 工具,52.20,2026-04-23
+OpenAI,GPT-5.5 Pro,思考水平·极高,43.10,2026-04-23
+OpenAI,GPT-5.5,思考水平·高,41.40,2026-04-23
+阿里巴巴,Qwen3.6-27B,开启思考,24.00,2026-04-22
+Moonshot AI,Kimi K2.6,开启思考 工具 联网,54.00,2026-04-20
+Moonshot AI,Kimi K2.6,开启思考,34.70,2026-04-20
+阿里巴巴,Qwen3.6-Max-Preview,开启思考 工具,50.20,2026-04-18
+阿里巴巴,Qwen3.6-Max-Preview,思考水平·Max,28.80,2026-04-18
+Anthropic,Opus 4.7,扩展思考 工具,54.70,2026-04-16
+Anthropic,Opus 4.7,扩展思考,46.90,2026-04-16
+阿里巴巴,Qwen3.6-35B-A3B,开启思考,21.40,2026-04-16
+Facebook AI研究实验室,Muse Spark,深度思考模式,58.00,2026-04-08
+Facebook AI研究实验室,Muse Spark,开启思考 工具,50.40,2026-04-08
+Facebook AI研究实验室,Muse Spark,开启思考,42.80,2026-04-08
+Anthropic,Claude Mythos Preview,扩展思考 工具,64.70,2026-04-07
+Anthropic,Claude Mythos Preview,扩展思考,56.80,2026-04-07
+DeepMind,Gemma 4 31B,开启思考 工具 联网,26.50,2026-04-02
+DeepMind,Gemma 4 31B,开启思考,19.50,2026-04-02
+DeepMind,Gemma 4 26B A4B,开启思考 工具 联网,17.20,2026-04-02
+DeepMind,Gemma 4 26B A4B,开启思考,8.70,2026-04-02
+阿里巴巴,Qwen 3.6 Plus Preview,开启思考 工具,50.60,2026-03-31
+阿里巴巴,Qwen 3.6 Plus Preview,开启思考,28.80,2026-03-31
+智谱AI,GLM 5.1,开启思考 工具,52.30,2026-03-27
+智谱AI,GLM 5.1,开启思考,31.00,2026-03-27
+MiniMaxAI,MiniMax-M2.7,开启思考,28.00,2026-03-18
+OpenAI,GPT-5.4 mini,思考水平·极高 工具,41.50,2026-03-17
+OpenAI,GPT-5.4 nano,思考水平·极高 工具,37.70,2026-03-17
+OpenAI,GPT-5.4 mini,思考水平·极高,28.20,2026-03-17
+OpenAI,GPT-5.4 nano,思考水平·极高,24.30,2026-03-17
+OpenAI,GPT-5.4 Pro,思考水平·高 工具,58.70,2026-03-05
+OpenAI,GPT-5.4,思考水平·极高 工具,52.10,2026-03-05
+OpenAI,GPT-5.4 Pro,思考水平·高,42.70,2026-03-05
+OpenAI,GPT-5.4,思考水平·极高,39.80,2026-03-05
+阿里巴巴,Qwen3.5-27B,开启思考 工具,48.50,2026-02-25
+阿里巴巴,Qwen3.5-27B,开启思考,24.30,2026-02-25
+Google Deep Mind,Gemini 3.1 Pro Preview,思考水平·高 工具,51.40,2026-02-20
+Google Deep Mind,Gemini 3.1 Pro Preview,思考水平·高,44.40,2026-02-20
+Anthropic,Claude Sonnet 4.6,开启思考 工具,49.00,2026-02-17
+Anthropic,Claude Sonnet 4.6,开启思考,33.20,2026-02-17
+阿里巴巴,Qwen3.5-397B-A17B,开启思考 工具 联网,48.30,2026-02-16
+阿里巴巴,Qwen3.5-397B-A17B,开启思考,28.70,2026-02-16
+Google Deep Mind,Gemini 3 Deep Think - 2620,开启思考,48.40,2026-02-13
+MiniMaxAI,MiniMax M2.5,开启思考,19.40,2026-02-12
+智谱AI,GLM-5,开启思考 工具,50.40,2026-02-11
+智谱AI,GLM-5,开启思考,30.50,2026-02-11
+Anthropic,Claude Opus 4.6,扩展思考 工具 联网,53.00,2026-02-05
+Anthropic,Claude Opus 4.6,思考水平·Max,34.44,2026-02-05
+Moonshot AI,Kimi K2.5,开启思考 工具,50.20,2026-01-27
+Moonshot AI,Kimi K2.5,开启思考,30.10,2026-01-27
+阿里巴巴,Qwen3-Max-Thinking,开启思考 工具,49.80,2026-01-26
+阿里巴巴,Qwen3-Max-Thinking,开启思考,30.20,2026-01-26
+智谱AI,GLM-4.7-Flash,开启思考,14.40,2026-01-19
+智谱AI,GLM-4.7-Flash,常规模式,6.10,2026-01-19
+MiniMaxAI,M2.1,开启思考,22.00,2025-12-23
+智谱AI,GLM-4.7,开启思考 工具,42.80,2025-12-22
+智谱AI,GLM-4.7,开启思考,24.80,2025-12-22
+Google Deep Mind,Gemini 3.0 Flash,开启思考 工具,43.50,2025-12-17
+Google Deep Mind,Gemini 3.0 Flash,开启思考,33.70,2025-12-17
+OpenAI,GPT-5.2 Pro,开启思考 工具,50.00,2025-12-11
+OpenAI,GPT-5.2,思考水平·极高 工具 联网,45.50,2025-12-11
+OpenAI,GPT-5.2 Pro,开启思考,36.60,2025-12-11
+OpenAI,GPT-5.2,思考水平·极高,34.50,2025-12-11
+DeepSeek-AI,DeepSeek V3.2 Speciale,开启思考,30.60,2025-12-01
+DeepSeek-AI,DeepSeek V3.2,开启思考,25.10,2025-12-01
+Anthropic,Opus 4.5,扩展思考 工具,43.20,2025-11-25
+Anthropic,Opus 4.5,扩展思考,30.80,2025-11-25
+xAI,Grok 4.1 Fast,开启思考,17.60,2025-11-19
+Google Deep Mind,Gemini 3.0 Pro (Preview 11-2025),思考水平·高 工具,45.80,2025-11-18
+Google Deep Mind,Gemini 3.0 Pro (Preview 11-2025),开启思考,37.50,2025-11-18
+Google Deep Mind,Gemini 3.0 Pro (Preview 11-2025),思考水平·高,37.20,2025-11-18
+百度,ERNIE 5.0,开启思考,25.81,2025-11-13
+OpenAI,GPT-5.1,思考水平·高 工具 联网,42.70,2025-11-12
+OpenAI,GPT-5.1,开启思考,26.50,2025-11-12
+OpenAI,GPT-5.1,思考水平·高,25.70,2025-11-12
+Moonshot AI,Kimi K2 Thinking,开启思考 工具,44.90,2025-11-06
+Moonshot AI,Kimi K2 Thinking,开启思考,23.90,2025-11-06
+MiniMaxAI,MiniMax M2,开启思考,12.50,2025-10-27
+Anthropic,Haiku 4.5,扩展思考,9.70,2025-10-15
+Anthropic,Haiku 4.5,常规模式,4.30,2025-10-15
+Anthropic,Claude Sonnet 4.5,开启思考 工具,33.60,2025-09-30
+智谱AI,GLM-4.6,开启思考 工具,30.40,2025-09-30
+Anthropic,Claude Sonnet 4.5,开启思考,17.70,2025-09-30
+智谱AI,GLM-4.6,开启思考,17.20,2025-09-30
+Anthropic,Claude Sonnet 4.5,常规模式,7.10,2025-09-30
+智谱AI,GLM-4.6,常规模式,5.20,2025-09-30
+DeepSeek-AI,DeepSeek V3.2-Exp,开启思考 工具,20.30,2025-09-29
+DeepSeek-AI,DeepSeek V3.2-Exp,开启思考,19.80,2025-09-29
+DeepSeek-AI,DeepSeek V3.2-Exp,常规模式,8.60,2025-09-29
+DeepSeek-AI,DeepSeek-V3.1 Terminus,常规模式,21.70,2025-09-22
+DeepSeek-AI,DeepSeek-V3.1 Terminus,开启思考,15.20,2025-09-22
+xAI,Grok 4 Fast,开启思考,20.00,2025-09-19
+Moonshot AI,Kimi K2 0905,开启思考 工具,21.70,2025-09-05
+阿里巴巴,Qwen3 Max (Preview),常规模式,11.10,2025-09-05
+DeepSeek-AI,DeepSeek-V3.1,开启思考,15.90,2025-08-20
+OpenAI,GPT-5-Pro,开启思考 工具,42.00,2025-08-07
+OpenAI,GPT-5,开启思考 工具,35.20,2025-08-07
+OpenAI,GPT-5-Pro,开启思考,30.70,2025-08-07
+OpenAI,GPT-5,思考水平·高,25.32,2025-08-07
+OpenAI,GPT-5,开启思考,24.80,2025-08-07
+OpenAI,GPT-5,常规模式,6.30,2025-08-07
+OpenAI,GPT-5-mini,开启思考,5.00,2025-08-07
+OpenAI,GPT-5-mini,常规模式,0.00,2025-08-07
+OpenAI,GPT OSS 120B,开启思考 工具,19.00,2025-08-06
+OpenAI,GPT OSS 20B,开启思考 工具,17.30,2025-08-06
+OpenAI,GPT OSS 120B,开启思考,14.90,2025-08-06
+OpenAI,GPT OSS 20B,开启思考,10.90,2025-08-06
+Google Deep Mind,Gemini 2.5 Deep Think,深度思考模式,34.80,2025-08-01
+阿里巴巴,Qwen3-235B-A22B-Thinking,开启思考,18.20,2025-07-30
+阿里巴巴,Qwen3-30B-A3B-2507,开启思考,9.80,2025-07-29
+智谱AI,GLM-4.5,开启思考,14.40,2025-07-28
+智谱AI,GLM-4.5-Air,开启思考,10.60,2025-07-28
+阿里巴巴,Qwen3-235B-A22B-Thinking-2507,开启思考,18.20,2025-07-25
+Moonshot AI,Kimi K2,常规模式,4.70,2025-07-11
+xAI,Grok 4,开启思考 工具 联网,38.60,2025-07-10
+xAI,Grok 4,开启思考 工具,38.60,2025-07-10
+xAI,Grok 4,开启思考,25.40,2025-07-10
+Google Deep Mind,Gemini 2.5 Flash-Lite,常规模式,6.90,2025-06-17
+MiniMaxAI,MiniMax-M1-80k,常规模式,8.40,2025-06-16
+MiniMaxAI,MiniMax-M1-40k,常规模式,7.20,2025-06-16
+OpenAI,o3-pro,常规模式,21.00,2025-06-10
+Google Deep Mind,Gemini 2.5-Pro,开启思考,21.60,2025-06-05
+DeepSeek-AI,DeepSeek-R1-0528,开启思考,17.70,2025-05-28
+Anthropic,Claude Opus 4,常规模式,10.70,2025-05-23
+Anthropic,Claude Sonnet 4,开启思考,9.60,2025-05-23
+Anthropic,Claude Sonnet 4,常规模式,5.52,2025-05-23
+Google Deep Mind,Gemini-2.5-Pro-Preview-05-06,常规模式,21.60,2025-05-06
+阿里巴巴,Qwen3-235B-A22B,常规模式,7.60,2025-04-28
+Google Deep Mind,Gemini 2.5 Flash,开启思考,11.00,2025-04-17
+Google Deep Mind,Gemini 2.5 Flash,常规模式,8.40,2025-04-17
+OpenAI,OpenAI o3,开启思考,20.32,2025-04-16
+OpenAI,OpenAI o4 - mini,开启思考 工具,17.70,2025-04-16
+OpenAI,OpenAI o4 - mini,开启思考,14.28,2025-04-16
+OpenAI,GPT-4.1,常规模式,3.70,2025-04-14
+Google Deep Mind,Gemini 2.5 Pro Experimental 03-25,常规模式,18.80,2025-03-25
+DeepSeek-AI,DeepSeek-V3-0324,常规模式,5.20,2025-03-24
+Anthropic,Claude Sonnet 3.7,开启思考,10.30,2025-02-25
+OpenAI,OpenAI o3-mini,开启思考,13.40,2025-01-31
+DeepMind,Gemini 2.0 Flash Experimental,常规模式,5.10,2024-12-11
+OpenAI,OpenAI o1,常规模式,9.10,2024-12-05
+OpenAI,GPT-4o,常规模式,5.30,2024-05-13
