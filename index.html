@@ -78,6 +78,7 @@
     </div>
   </div>
 
+<script src="最新模型.js" charset="utf-8"></script>
 <script src="数据源.js" charset="utf-8"></script>
 <script>
 (function () {
@@ -108,9 +109,11 @@
     text: '#1f2937', sub: '#64748b', faint: '#9ca3af',
     tick: '#475569',
     zoneLow: '#9ca3af', zoneMid: '#d97706', zoneHigh: '#16a34a',
-    pillFill: '#ffffff', pillStroke: '#dbe2ea', fillMark: '#94a3b8',
+    pillFill: '#ffffff', pillStroke: '#dbe2ea', fillMark: '#94a3b8', latestStroke: '#93c5fd',
     axisBg: '#f4f6fa', axisStroke: '#e2e8f0'
   };
+
+  const LATEST = window.__LATEST_MODELS || {};   // 各公司最新模型，用浅蓝边框高亮
 
   /* =========================================================
    * 3. 别名表（过长的模型名简化；系列名可缩写）
@@ -407,7 +410,7 @@
 
     // ---- 标题 ----
     parts.push(`<text x="${W/2}" y="34" font-size="30" font-weight="700" fill="${C.text}" text-anchor="middle">大模型智能天梯图</text>`);
-    parts.push(`<text x="${W/2}" y="60" font-size="13" fill="${C.sub}" text-anchor="middle">更新日期 20260816    作者 Panda</text>`);
+    parts.push(`<text x="${W/2}" y="60" font-size="13" fill="${C.sub}" text-anchor="middle">更新日期 20260815    作者 Panda</text>`);
 
     // ---- 分带底色 ----
     function band(lo, hi, color) {
@@ -557,7 +560,8 @@
         const centered = it.lines.length > 1;
         parts.push('<g>');
         parts.push(`<title>${esc(tip)}</title>`);
-        parts.push(`<rect x="${px0}" y="${py0}" width="${it.w}" height="${h}" rx="${r}" fill="${C.pillFill}" stroke="${C.pillStroke}" stroke-width="1"/>`);
+        const latest = LATEST[m.company] === m.model;
+        parts.push(`<rect x="${px0}" y="${py0}" width="${it.w}" height="${h}" rx="${r}" fill="${C.pillFill}" stroke="${latest ? C.latestStroke : C.pillStroke}" stroke-width="${latest ? 1.5 : 1}"/>`);
         parts.push(`<circle cx="${px0 + padX + dotR}" cy="${py0 + h/2}" r="${dotR}" fill="${m.qColor}"/>`);
         it.lines.forEach((ln, j) => {
           const ly = py0 + padY + lineH * (j + 0.5);
